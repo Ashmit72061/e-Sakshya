@@ -13,6 +13,7 @@ import { formatDateTime, formatRelative } from '@/lib/format'
 import { shortHash } from '@/lib/crypto'
 import { useData } from '@/store/data'
 import { useSession } from '@/store/session'
+import { useVisibleApprovals, useVisibleDocuments } from '@/lib/access'
 import type { ApprovalRequest } from '@/lib/types'
 
 type Tab = 'pending' | 'approved' | 'rejected' | 'all'
@@ -21,7 +22,8 @@ const now = new Date('2026-09-28T12:00:00+05:30').getTime()
 const ageHours = (iso: string) => Math.max(1, Math.round((now - new Date(iso).getTime()) / 36e5))
 
 export function ApprovalsPage() {
-  const { approvals, documents, custody, decideApproval, updateDocument, logAudit } = useData(); const allowed = useCan()
+  const { custody, decideApproval, updateDocument, logAudit } = useData()
+  const approvals = useVisibleApprovals(); const documents = useVisibleDocuments(); const allowed = useCan()
   const { user, users } = useSession()
   const [tab, setTab] = useState<Tab>('pending'), [kind, setKind] = useState('all'), [assignee, setAssignee] = useState('all'), [query, setQuery] = useState('')
   const [selected, setSelected] = useState<ApprovalRequest | null>(null), [decision, setDecision] = useState<'reject'|'changes'|null>(null), [note, setNote] = useState('')

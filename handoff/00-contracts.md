@@ -266,6 +266,21 @@ Screen agents MUST gate sensitive controls with `can()` / `useCan()`. Denial sur
 - `src/components/rbac/Control.tsx` exports `Control`, `useControl`, `CustomControlsDock`, and `runControl`.
 - `src/components/rbac/RoleMatrixTable.tsx` renders the shared live role matrix.
 
+### `src/lib/access.ts`
+```ts
+export type AccessDenied = { status: 'denied'; required: Classification; actual: Classification }
+export type CaseAccess = { status: 'ok'; record: CaseRecord } | { status: 'missing' } | AccessDenied
+export type DocumentAccess = { status: 'ok'; record: DocumentRecord } | { status: 'missing' } | AccessDenied
+export function isCaseVisible(record: CaseRecord, user: User, clearance: Classification): boolean
+export function isDocumentVisible(record: DocumentRecord, ctx: { cases: readonly CaseRecord[]; user: User; clearance: Classification }): boolean
+export function useVisibleCases(): CaseRecord[]
+export function useVisibleDocuments(): DocumentRecord[]
+export function useVisibleApprovals(): ApprovalRequest[]
+export function useCaseAccess(id: string | undefined): CaseAccess
+export function useDocumentAccess(id: string | undefined): DocumentAccess
+export function useCanSeeDocument(): (record: DocumentRecord) => boolean
+```
+
 ## 3.5 `src/lib/crypto.ts`
 ```ts
 export async function sha256Hex(input: string | ArrayBuffer): Promise<string>  // Web Crypto

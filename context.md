@@ -70,6 +70,27 @@ Route contracts are wired in `src/App.tsx` by the core agent. **Screen agents mu
 ## 6. Shared contracts
 Defined in `handoff/00-contracts.md` — types (`src/lib/types.ts`), store shape (`src/store/*`, including `src/store/rbac.ts`), permission engine (`src/lib/permissions.ts`), route-permission map (`src/lib/routes.ts`), hash-chain (`src/lib/crypto.ts`), formatters (`src/lib/format.ts`), RBAC components (`src/components/rbac/*`), marketing components (`src/components/marketing/*`), and shared domain components (`src/components/domain/*`).
 
+### 6.1 Access layer and navigation
+- Access has three dimensions: capability, clearance, and assignment. `src/lib/access.ts` is the record-authorization chokepoint: `isCaseVisible`, `isDocumentVisible`, `useVisibleCases`, `useVisibleDocuments`, `useVisibleApprovals`, `useCaseAccess`, `useDocumentAccess`, and `useCanSeeDocument`, plus the `AccessDenied`, `CaseAccess`, and `DocumentAccess` types.
+- Work surfaces render record-derived content only from clearance-filtered access-layer results. Audit-event content on `/security/audit` and `/security/integrity` is deliberately exempt and governed by `audit:view` alone; their record pickers still filter. No rendered number may derive from a raw record collection.
+- Pages must not read `cases` or `documents` directly from `useData`; use the access-layer hooks instead.
+
+| Route | Permission |
+|---|---|
+| `/` | `case:view` |
+| `/cases` | `case:view` |
+| `/documents` | `doc:view` |
+| `/upload` | `doc:upload` |
+| `/search` | `case:view` |
+| `/approvals` | `doc:approve` |
+| `/security/access` | `access:manage` |
+| `/security/audit` | `audit:view` |
+| `/security/integrity` | `audit:view` |
+| `/security/retention` | `retention:manage` |
+| `/admin` | `admin:users` |
+
+Expected nav item counts: Super Administrator 11, Station Officer 8, System Administrator 9, Evidence Custodian 8, Public Prosecutor 7, Investigator 7, Court Clerk 6, Auditor 6.
+
 Import aliases: `@/* → src/*`. `cn` comes from the `cn` package (`import { cn } from "cn"`), matching generated shadcn components.
 
 ## 7. Quality bar

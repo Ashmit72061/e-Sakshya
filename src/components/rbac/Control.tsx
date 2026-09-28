@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { useCan } from '@/lib/permissions'
+import { can, useCan } from '@/lib/permissions'
 import type { ControlArea } from '@/lib/types'
 import { BUILTIN_CONTROLS, useRbac } from '@/store/rbac'
+import { useSession } from '@/store/session'
 
 export function useControl(id: string): boolean {
   const controls = useRbac((state) => state.controls)
@@ -20,7 +21,13 @@ export function Control({ id, children, fallback = null }: { id: string; childre
 
 export function CustomControlsDock({ area }: { area: ControlArea }): ReactNode {
   const customControls = useRbac((state) => state.customControls)
-  const controls = customControls.filter((control) => control.area === area)
+  const enabledControls = useRbac((state) => state.controls)
+  const matrix = useRbac((state) => state.matrix)
+  const user = useSession((state) => state.user)
+  const controls = useMemo(() => {
+    const permissions = matrix.find((entry) => entry.role === user.role)?.permissions ?? []
+    return customControls.filter((control) => control.area === area && (!control.builtin || (enabledControls[control.id] ?? true)) && (!control.permission || (permissions.includes(control.permission) && can(user, control.permission))))
+  }, [area, customControls, enabledControls, matrix, user])
   if (!controls.length) return null
   return <div className="flex gap-2">{controls.map((control) => <Button key={control.id} size="sm" variant="outline" onClick={() => runControl(control.id)}>{control.label}</Button>)}</div>
 }
@@ -28,7 +35,7 @@ export function CustomControlsDock({ area }: { area: ControlArea }): ReactNode {
 export function runControl(id: string, handlers?: Record<string, () => void>): void {
   const { controls, customControls } = useRbac.getState()
   const definition = BUILTIN_CONTROLS.find((control) => control.id === id) ?? customControls.find((control) => control.id === id)
-  if (!definition || (definition.builtin && !(controls[id] ?? true))) return
+  if (!definition || (definition.builtin && !(controls[id] ?? true)) || (definition.permission && !can(useSession.getState().user, definition.permission))) return
   if (handlers?.[id]) {
     handlers[id]()
     return

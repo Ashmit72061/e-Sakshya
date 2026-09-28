@@ -3,10 +3,9 @@ import { FileText, FolderKanban, Gauge, Gavel, Search, ShieldAlert, ShieldCheck,
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useData } from '@/store/data'
 import { useCan } from '@/lib/permissions'
 import { NAV_PERMISSIONS } from '@/lib/routes'
-import { useClearanceFilter } from '@/lib/clearance'
+import { useVisibleCases, useVisibleDocuments } from '@/lib/access'
 
 type PaletteItem = readonly [string, string, LucideIcon, string?]
 const navigation: readonly PaletteItem[] = [
@@ -22,8 +21,7 @@ function PaletteGroup({ label, items, offset, active, onHover, onSelect }: { lab
 
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const navigate = useNavigate(); const [query, setQuery] = useState(''); const [rawActive, setActive] = useState(0)
-  const cases = useData((s) => s.cases); const documents = useData((s) => s.documents); const can = useCan(); const filterByClearance = useClearanceFilter()
-  const visibleCases = useMemo(() => filterByClearance(cases), [cases, filterByClearance]); const visibleCaseIds = useMemo(() => new Set(visibleCases.map((item) => item.id)), [visibleCases]); const visibleDocuments = useMemo(() => filterByClearance(documents).filter((item) => visibleCaseIds.has(item.caseId)), [documents, filterByClearance, visibleCaseIds])
+  const visibleCases = useVisibleCases(); const visibleDocuments = useVisibleDocuments(); const can = useCan()
   const normalized = query.toLowerCase().trim()
   const matches = (items: readonly PaletteItem[]) => items.filter(([label]) => !normalized || label.toLowerCase().includes(normalized))
   const permitted = (items: readonly PaletteItem[]) => items.filter(([, path]) => { const permission = ACTION_PERMISSIONS[path as keyof typeof ACTION_PERMISSIONS] ?? NAV_PERMISSIONS[path]; return !permission || can(permission) }); const nav = matches(permitted(navigation)); const actionItems = matches(permitted(actions))

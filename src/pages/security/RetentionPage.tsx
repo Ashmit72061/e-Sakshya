@@ -5,11 +5,12 @@ import { PageHeader, ClassificationBadge, EmptyState } from '@/components/domain
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useData } from '@/store/data'
+import { useVisibleDocuments } from '@/lib/access'
 import { GuardedButton, Panel } from './security-ui'
 import { Control } from '@/components/rbac/Control'
 const policies=[['Criminal case — 10 years','FIR, case diary','10 years','Case closure'],['Charge sheet — permanent','Charge sheet, court order','Permanent','Filing'],['Witness statement — 15 years','Witness statement','15 years','Recording']]
 export function RetentionPage(){
- const {documents,setLegalHold}=useData(); const [edit,setEdit]=useState<string>(); const held=documents.filter(d=>d.retention.legalHold); const expired=documents.filter(d=>new Date(d.retention.expiresOn)<new Date()&&!d.retention.legalHold); const recommended=documents.filter(d=>!d.retention.legalHold&&['restricted','sealed'].includes(d.classification)).slice(0,4)
+  const {setLegalHold}=useData(); const documents=useVisibleDocuments(); const [edit,setEdit]=useState<string>(); const held=documents.filter(d=>d.retention.legalHold); const expired=documents.filter(d=>new Date(d.retention.expiresOn)<new Date()&&!d.retention.legalHold); const recommended=documents.filter(d=>!d.retention.legalHold&&['restricted','sealed'].includes(d.classification)).slice(0,4)
  const toggle=(id:string,on:boolean)=>{setLegalHold(id,on);toast.success(on?'Legal hold placed and recorded':'Legal hold released and recorded')}
   return <><PageHeader title="Retention & Legal Holds" subtitle="Purpose-bound retention controls for legal records" actions={<><Control id="retention.purge"><Button size="sm" variant="outline" onClick={()=>toast.info('Purge expired — demonstration control')}>Purge expired</Button></Control><GuardedButton perm="retention:manage" onClick={()=>toast.success('12 documents eligible for archival · 3 blocked by legal hold')}>Run retention check</GuardedButton></>}/>
  {expired.length>0&&<div className="mb-4 flex gap-2 rounded border border-warning/30 bg-warning/10 p-3 text-sm text-warning"><AlertTriangle className="size-5"/>{expired.length} documents are past their retention date without a legal hold. Review before archival.</div>}

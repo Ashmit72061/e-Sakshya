@@ -71,3 +71,4 @@ src/main.tsx, src/index.css (fonts import, tweaks only), index.html (title/meta/
 - No intentional API naming deviations from `00-contracts.md`. `useData` additionally exposes `ready` for asynchronous deterministic seed hydration; integrity receipts are returned by `buildSeed()` as required by the seed contract.
 - `verifyChain()` synchronously validates the append-only linkage and presence of hashes. Seed and live audit hashes are produced with Web Crypto; a full asynchronous digest recomputation is intentionally not exposed because the locked store contract requires a synchronous return value.
 - Known prototype limitation: role/session, shell preference, and RBAC matrix/control persistence use local storage only; all case data remains in memory and resets on refresh.
+- `src/lib/access.ts` is the record-authorization chokepoint. Pages must use its visible-record hooks and must not read `cases` or `documents` directly from `useData`.

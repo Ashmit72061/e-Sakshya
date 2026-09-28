@@ -3,7 +3,7 @@ import type { Permission } from '@/lib/types'
 export const ROUTE_PERMISSIONS: Record<string, Permission> = {
   '/': 'case:view', '/cases': 'case:view', '/cases/:id': 'case:view',
   '/documents': 'doc:view', '/documents/:id': 'doc:view',
-  '/upload': 'doc:upload', '/search': 'case:view', '/approvals': 'case:view',
+  '/upload': 'doc:upload', '/search': 'case:view', '/approvals': 'doc:approve',
   '/admin': 'admin:users',
   '/security/access': 'access:manage', '/security/audit': 'audit:view',
   '/security/integrity': 'audit:view', '/security/retention': 'retention:manage',
@@ -11,7 +11,7 @@ export const ROUTE_PERMISSIONS: Record<string, Permission> = {
 
 export const NAV_PERMISSIONS: Record<string, Permission> = {
   '/': 'case:view', '/cases': 'case:view', '/documents': 'doc:view', '/upload': 'doc:upload',
-  '/search': 'case:view', '/approvals': 'case:view',
+  '/search': 'case:view', '/approvals': 'doc:approve',
   '/security/access': 'access:manage', '/security/audit': 'audit:view',
   '/security/integrity': 'audit:view', '/security/retention': 'retention:manage',
   '/admin': 'admin:users',

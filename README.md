@@ -32,6 +32,7 @@ Stack: Vite, React 19, TypeScript (strict), Tailwind CSS v4, shadcn/ui, React Ro
 - Dashboard, case workspace, document library, responsive three-pane viewer, and secure intake wizard.
 - Keyword and simulated semantic retrieval with cited source records.
 - Approval queue, demonstration eSign, access-sharing, break-glass, audit-chain and retention controls.
+- `/approvals` requires `doc:approve` and is available to Station Officers, Public Prosecutors, and Super Administrators.
 - Public landing page at `/` when signed out, with `/home` retained as an alias; `/` shows the protected dashboard when signed in.
 - Permission-guarded routes render a 403 screen on denial, with the required permission, eligible roles, and an inline role switcher.
 - Permission-filtered sidebar and global command palette (`Ctrl+K` / `⌘K`) search only authorised routes and actions, plus cases and documents.
