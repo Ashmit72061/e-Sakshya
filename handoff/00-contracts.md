@@ -22,7 +22,7 @@ export type SignatureState = 'unsigned' | 'pending' | 'valid' | 'expired' | 'rev
 
 export type Role =
   | 'investigator' | 'station-officer' | 'prosecutor'
-  | 'court-clerk' | 'evidence-custodian' | 'auditor' | 'admin'
+  | 'court-clerk' | 'evidence-custodian' | 'auditor' | 'admin' | 'superadmin'
 
 export type Permission =
   | 'doc:view' | 'doc:download' | 'doc:upload' | 'doc:annotate' | 'doc:redact'
@@ -30,6 +30,17 @@ export type Permission =
   | 'case:view' | 'case:create' | 'case:assign'
   | 'access:manage' | 'audit:view' | 'audit:export'
   | 'retention:manage' | 'admin:users' | 'security:breakglass'
+
+export type ControlArea = 'topbar' | 'documents' | 'cases' | 'approvals' | 'admin' | 'security'
+
+export interface ControlDef {
+  id: string
+  label: string
+  area: ControlArea
+  permission?: Permission
+  stub: boolean
+  builtin: boolean
+}
 
 export interface User {
   id: string            // 'u-001'
@@ -238,14 +249,24 @@ useData: {
 ## 3.3 `src/lib/permissions.ts`
 ```ts
 export function can(user: User, perm: Permission): boolean
-export function useCan(): (perm: Permission) => boolean   // reads useSession
-export const ROLE_MATRIX: RolePermissionMatrix[]
+export function useCan(): (perm: Permission) => boolean
+export function useMatrix(): RolePermissionMatrix[]
+export function denialMessage(perm: Permission): string
+export const DEFAULT_MATRIX: RolePermissionMatrix[]
+export const ROLE_MATRIX: RolePermissionMatrix[] // legacy read-only alias of DEFAULT_MATRIX
 export const ROLE_LABELS: Record<Role, string>
 ```
-Screen agents MUST gate sensitive controls with `can()` / `useCan()` and show a tooltip
-("Requires Station Officer clearance") when denied — this is the visible RBAC demo.
+Screen agents MUST gate sensitive controls with `can()` / `useCan()`. Denial surfaces use
+`denialMessage(perm)`, which produces `Requires “<label>” — granted to <role list>`.
 
-## 3.4 `src/lib/crypto.ts`
+## 3.4 RBAC routes, state, and primitives
+
+- `src/lib/routes.ts` exports `ROUTE_PERMISSIONS`, `NAV_PERMISSIONS`, and `permissionForPath()`.
+- `src/store/rbac.ts` owns the persisted live matrix, builtin-control state, and custom controls.
+- `src/components/rbac/Control.tsx` exports `Control`, `useControl`, `CustomControlsDock`, and `runControl`.
+- `src/components/rbac/RoleMatrixTable.tsx` renders the shared live role matrix.
+
+## 3.5 `src/lib/crypto.ts`
 ```ts
 export async function sha256Hex(input: string | ArrayBuffer): Promise<string>  // Web Crypto
 export function shortHash(hex: string, n?: number): string  // 'a1b2c3…9f0e'
@@ -253,13 +274,13 @@ export const GENESIS = '0'.repeat(64)
 export async function chainEventPayload(prevHash: string, payload: unknown): Promise<string>
 ```
 
-## 3.5 `src/lib/format.ts`
+## 3.6 `src/lib/format.ts`
 ```ts
 formatBytes(n), formatDate(iso), formatDateTime(iso), formatRelative(iso),
 formatINR(n) /* not needed */, classNames → use cn from 'cn'
 ```
 
-## 3.6 Shared domain components (`src/components/domain/`) — created by core agent
+## 3.7 Shared domain components (`src/components/domain/`) — created by core agent
 
 | Component | Props (abridged) | Purpose |
 |---|---|---|
@@ -277,16 +298,16 @@ formatINR(n) /* not needed */, classNames → use cn from 'cn'
 | `DocumentFacsimile` | doc, watermark? | serif-rendered mock page (FIR/charge sheet layout) used inside viewer |
 | `WatermarkOverlay` | text | diagonal repeating watermark layer |
 
-## 3.7 Layout (`src/components/layout/`) — core agent
+## 3.8 Layout (`src/components/layout/`) — core agent
 - `AppShell`: fixed left sidebar (collapsible) + topbar + main content (own route outlet).
 - Sidebar nav groups: **Operations** (Dashboard, Cases, Documents, Upload, Search) · **Workflow** (Approvals) · **Security** (Access Control, Audit Log, Integrity, Retention) · **System** (Admin).
 - Topbar: global search entry (navigates `/search?q=`), notifications bell (dropdown with 3 items), theme toggle, **role switcher** (select user), user chip.
 - Sidebar footer: build label `e-Sakshya v0.9 · DEMO` + classification banner "OFFICIAL — DEMO DATA".
 - `AuthLayout` for `/login`.
 
-## 3.8 Mock data requirements (core agent)
+## 3.9 Mock data requirements (core agent)
 `src/data/` seeds:
-- **7 users** across roles (investigator, station-officer, prosecutor, court-clerk, evidence-custodian, auditor, admin) — Indian names, badges, stations.
+- **8 users** across roles (investigator, station-officer, prosecutor, court-clerk, evidence-custodian, auditor, admin, superadmin) — Indian names, badges, stations.
 - **6 cases** (cyber fraud, POSCO, narcotics, murder, financial fraud, missing person) with realistic FIR numbers, BNS/NDPS/POCSO sections, CNR, courts.
 - **~16 documents** spread across cases covering every `DocType`, each with `searchableText` (600–1500 chars of realistic body — FIR format with header, complainant, sections, signature block; charge sheet; witness statement; forensic report; court order), all metadata, versions (1–3), sha256 (computed via crypto on the text at load or precomputed deterministic strings).
 - **~40 audit events** forming a valid hash chain (compute sequentially in seed builder), plus 2 demo anomalies (a denied access, a failed login) marked severity accordingly.
@@ -295,7 +316,7 @@ formatINR(n) /* not needed */, classNames → use cn from 'cn'
 
 Seed module: `src/data/seed.ts` exporting `buildSeed()` returning everything; `src/store/data.ts` initializes from it.
 
-## 3.9 Rules for ALL screen agents
+## 3.10 Rules for ALL screen agents
 1. Read `context.md` + this file + your handoff before coding.
 2. **Only touch files listed in your handoff.** Never edit shared modules; extend locally.
 3. Import shared components/types; don't duplicate them.

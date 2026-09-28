@@ -18,11 +18,13 @@ src/components/security/*        (optional)
 ## A. Access Control `/security/access`
 - **Header**: current user's role + clearance summary; "Break-glass request" button (always visible).
 - **Tabs**: Role matrix · Active shares · Break-glass log.
-- **Role matrix**: full role×permission grid (from `ROLE_MATRIX`): rows grouped (Document, Case, Audit, Administration), columns = 7 roles, cells ✓/✗/⚠ with legend and tooltip descriptions; highlight current user's column; "Edit" gated `access:manage` (disabled tooltip in demo).
+- **Role matrix**: full 8-role × 18-permission grid grouped into Document, Case, Access & audit, and Administration. Cells use the truthful `✓ Granted · ✗ Not granted · 🔒 Self-preservation lock` legend and the current user's column is highlighted. Only the Super Administrator can toggle grants; changes apply immediately and log `access.grant`/`access.revoke`. The Super Administrator's `access:manage` and `admin:users` cells are locked.
 - **Active shares** table: document (link), recipient, permission, purpose, created, **expires in** (mono, red <24h), watermark ✓, status; actions Revoke (gated `access:manage` → `revokeShare` + toast + audit) and Extend (+24h, local). Empty state included.
 - **Share dialog** (from header "Share document" or rows): doc select, recipient select (users), permission select, purpose textarea (required), expiry (date, max 30 days), watermark switch, preview panel: classification warning banner — "This document is <CLASSIFICATION>. All access will be recorded in the audit chain." → `grantShare` + toast + audit `doc.share`.
 - **Watermark preview card**: live render of `WatermarkOverlay` with the chosen doc/user/time — visual proof of dynamic watermarking.
 - **Break-glass modal**: title "Emergency (break-glass) access", doc select, incident id input (prefilled `INC-2026-…`), **mandatory justification** (min 20 chars, char counter), purpose radio (medical emergency / court direction / superior order / life safety), checkbox ack "Supervisor and audit team will be notified. Access valid 30 minutes."; submit gated `security:breakglass` → logs audit `breakglass.request` + `breakglass.grant` (severity critical/warning), success screen w/ countdown badge (30:00 ticking) and "logged" note; adds row to Break-glass log tab (local state is fine if store has no list — note it).
+
+Route-level access denials render `ForbiddenPage`: it names the required permission, lists the roles holding it, and provides an inline role switcher. Each denial is recorded as an `access.denied` audit event.
 
 ## B. Audit Log `/security/audit`
 - **Toolbar**: date range (two inputs), actor select, action multi-select (grouped), outcome select, severity select, case select, free-text; result count; **Verify chain** button (primary) and **Export evidence log** (gated `audit:export`).

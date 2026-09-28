@@ -27,12 +27,19 @@ src/components/approvals/*, src/components/admin/*  (optional)
 - **BSA certificate preview**: for `bsa-certificate` kind show a certificate document preview (serif, fields: case, doc, hash, custody summary, device particulars, certifying officer, signature block) with "Export PDF" → confirmation dialog + fake receipt toast (gated `audit:export`... use `doc:download` if simpler — keep gating consistent with matrix).
 - Empty state per tab.
 
-## B. Admin `/admin` (tabs; gate whole page: if `!can('admin:users')` show a "Restricted — requires System Administrator" EmptyState with shield icon)
+## B. Admin `/admin` (tabs; the route requires `admin:users`, and a denied user receives the shared 403 screen)
 1. **Users** — table: avatar, name, designation, role badge, badge id, station, clearance, status (Active/MFA on), last login; row → user detail dialog (permissions list read from ROLE_MATRIX, recent audit of that user); "Invite user" button (dialog, toast demo, gated).
-2. **Roles & permissions** — render `ROLE_MATRIX` as a full role×permission matrix table (rows = 11 permissions grouped by domain, columns = 7 roles) with ✓ / ✗ / ⚠(conditional) glyphs + legend; clicking a cell shows a tooltip with description. Include "Edit" buttons gated (disabled w/ tooltip "Read-only in demo").
+2. **Roles & permissions** — render all 18 permissions across 8 roles in four groups. The **Super Administrator** can click cells to toggle grants; changes apply immediately and create an `access.grant` or `access.revoke` audit event. Non-superadmins see no edit affordance. The legend is `✓ Granted · ✗ Not granted · 🔒 Self-preservation lock`; there is no conditional-access glyph. The Super Administrator's `access:manage` and `admin:users` cells are locked.
 3. **Departments & stations** — cards/table: station name, code, district, active cases, docs, officers (count) — derived from seed cases/users.
 4. **System status** — service cards (Vault storage, OCR engine, Anchor node, eSign gateway, Backup) each with status pill (Operational/Degraded), latency mono numbers, uptime; **storage meter** bars (documents by classification); recent system audit events (action starts with `system`/`chain` else last 6); "Run chain verification" button → `verifyChain()` → toast `Chain intact · N events verified` or critical toast with broken id (real call).
 5. **Integrations** (read-only info): CCTNS / ICJS / eCourts cards with "Linked (demo)" badges and identifier formats, plus honest footnote "Demonstration only — no live integration".
+
+### B.1 Controls & actions
+- **Controls & actions** is an Administration tab with columns: **Control** · **Placement** · **Gated by** · **Kind** · **Status**.
+- It lists builtin and custom controls. Builtin controls have on/off switches; only the Super Administrator can change them.
+- **Create control** opens a dialog for name, placement area, optional permission gate, and a display-only/no-op flag. Custom controls can be removed; builtin controls cannot.
+- `Control` from `@/components/rbac/Control` is the render primitive. It renders a control only when the control is enabled and its optional permission gate passes.
+- Current limitation: `CustomControlsDock` is mounted only for the `topbar` area in `AppShell`. Custom controls assigned another placement are stored and listed, but no page currently mounts a dock for them.
 
 ## Rules
 Read `context.md`, `00-contracts.md`, `research.md`. All privileged actions gated. Deterministic UI (no Math.random in render). `npm run build` passes → Status ✅.

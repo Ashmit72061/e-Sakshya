@@ -14,7 +14,7 @@ feature must be demonstrable with realistic mock data.
 - **Stack:** Vite + React 19 + TypeScript (strict) + Tailwind CSS v4 + shadcn/ui + react-router-dom v7 + zustand + recharts + lucide-react + sonner.
 - **Branding:** English only, fictional **"e-Sakshya — National Secure Document Vault"**, NCRB-style government chrome.
 - **Scope:** full 14 screens, all features clickable.
-- State: mock data + zustand (in-memory, optional localStorage for theme/session only).
+- State: mock data + zustand (in-memory; localStorage persists theme, session/shell preferences, and live RBAC settings).
 - Hashing: **real Web Crypto SHA-256** in browser for integrity demos.
 
 ## 3. Research digest (full notes: `handoff/research.md`)
@@ -23,6 +23,7 @@ feature must be demonstrable with realistic mock data.
 - **Integrity model:** SHA-256 at intake → append-only **hash-chained audit log** → Merkle root → optional ledger anchor. Never put PII/document content "on-chain".
 - **Chain of custody:** append-only events (intake, access, transfer, seal, export); originals immutable, edits create new versions.
 - **Classification ladder:** public → official → confidential → restricted → sealed.
+- Clearance is enforced on search surfaces.
 
 ## 4. Design system
 Tokens live in `src/index.css` (CSS vars + `@theme inline`). Use utility classes / tokens — no hardcoded hex in pages.
@@ -47,7 +48,8 @@ Tokens live in `src/index.css` (CSS vars + `@theme inline`). Use utility classes
 | Route | Page file (owner) |
 |---|---|
 | `/login` | `src/pages/auth/LoginPage.tsx` (core) |
-| `/` | `src/pages/dashboard/DashboardPage.tsx` (agent A) |
+| `/home` | `src/pages/marketing/LandingPage.tsx` (public; wrapped in `MarketingLayout`) |
+| `/` | Landing when signed out; `src/pages/dashboard/DashboardPage.tsx` when signed in (core) |
 | `/cases` | `src/pages/cases/CasesListPage.tsx` (agent A) |
 | `/cases/:id` | `src/pages/cases/CaseDetailPage.tsx` (agent B) |
 | `/documents` | `src/pages/documents/DocumentsLibraryPage.tsx` (agent C) |
@@ -60,11 +62,13 @@ Tokens live in `src/index.css` (CSS vars + `@theme inline`). Use utility classes
 | `/security/audit` | `src/pages/security/AuditLogPage.tsx` (agent F) |
 | `/security/integrity` | `src/pages/security/IntegrityPage.tsx` (agent F) |
 | `/security/retention` | `src/pages/security/RetentionPage.tsx` (agent F) |
+| 403 denial screen | `src/pages/errors/ForbiddenPage.tsx` |
+| `*` | Redirects to `/` |
 
 Route contracts are wired in `src/App.tsx` by the core agent. **Screen agents must not edit `App.tsx`, `src/components/layout/**`, `src/lib/**`, `src/store/**`, `src/data/**`, or `src/components/domain/**`.** If a shared piece is missing, add it *inside your own page folder* and note it in your handoff for the integration pass.
 
 ## 6. Shared contracts
-Defined in `handoff/00-contracts.md` — types (`src/lib/types.ts`), store shape (`src/store/*`), permission engine (`src/lib/permissions.ts`), hash-chain (`src/lib/crypto.ts`), formatters (`src/lib/format.ts`), shared domain components (`src/components/domain/*`).
+Defined in `handoff/00-contracts.md` — types (`src/lib/types.ts`), store shape (`src/store/*`, including `src/store/rbac.ts`), permission engine (`src/lib/permissions.ts`), route-permission map (`src/lib/routes.ts`), hash-chain (`src/lib/crypto.ts`), formatters (`src/lib/format.ts`), RBAC components (`src/components/rbac/*`), marketing components (`src/components/marketing/*`), and shared domain components (`src/components/domain/*`).
 
 Import aliases: `@/* → src/*`. `cn` comes from the `cn` package (`import { cn } from "cn"`), matching generated shadcn components.
 
@@ -81,6 +85,7 @@ Import aliases: `@/* → src/*`. `cn` comes from the `cn` package (`import { cn 
 | 2. Screens A–F (parallel) | 6 agents | ✅ done |
 | 3. Integration & polish | agent | ✅ done |
 | 4. Review + build + screenshot QA | main | ✅ done |
+| 5. Public landing page + live RBAC enforcement | agents A–E | ✅ delivered |
 
 ### QA round 1 fixes (2026-09-28)
 - Seed dates made relative to `Date.now()` (`stamp`/`ahead` in `src/data/seed.ts`) — dashboard "Documents · 7 days" (0 → 6) and 14-day audit-activity chart were empty with fixed Sept-2026 dates.

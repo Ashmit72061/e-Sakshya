@@ -4,12 +4,16 @@ import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useData } from '@/store/data'
+import { useCan } from '@/lib/permissions'
+import { NAV_PERMISSIONS } from '@/lib/routes'
+import { useClearanceFilter } from '@/lib/clearance'
 
 type PaletteItem = readonly [string, string, LucideIcon, string?]
 const navigation: readonly PaletteItem[] = [
   ['Dashboard', '/', Gauge], ['Cases', '/cases', FolderKanban], ['Documents', '/documents', FileText], ['Upload record', '/upload', Upload], ['Secure search', '/search', Search], ['Approvals', '/approvals', Gavel], ['Access control', '/security/access', ShieldAlert], ['Audit log', '/security/audit', ShieldCheck], ['Integrity centre', '/security/integrity', ShieldCheck], ['Retention', '/security/retention', FileText], ['Administration', '/admin', Gauge],
 ] as const
 const actions: readonly PaletteItem[] = [['Upload a record', '/upload', Upload], ['Verify audit chain', '/security/integrity', ShieldCheck], ['Request break-glass access', '/security/access', ShieldAlert]]
+const ACTION_PERMISSIONS = { '/upload': 'doc:upload', '/security/access': 'access:manage', '/security/integrity': 'audit:view' } as const
 
 function PaletteGroup({ label, items, offset, active, onHover, onSelect }: { label: string; items: readonly PaletteItem[]; offset: number; active: number; onHover: (index: number) => void; onSelect: (path: string) => void }) {
   if (!items.length) return null
@@ -18,12 +22,13 @@ function PaletteGroup({ label, items, offset, active, onHover, onSelect }: { lab
 
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const navigate = useNavigate(); const [query, setQuery] = useState(''); const [rawActive, setActive] = useState(0)
-  const cases = useData((s) => s.cases); const documents = useData((s) => s.documents)
+  const cases = useData((s) => s.cases); const documents = useData((s) => s.documents); const can = useCan(); const filterByClearance = useClearanceFilter()
+  const visibleCases = useMemo(() => filterByClearance(cases), [cases, filterByClearance]); const visibleCaseIds = useMemo(() => new Set(visibleCases.map((item) => item.id)), [visibleCases]); const visibleDocuments = useMemo(() => filterByClearance(documents).filter((item) => visibleCaseIds.has(item.caseId)), [documents, filterByClearance, visibleCaseIds])
   const normalized = query.toLowerCase().trim()
   const matches = (items: readonly PaletteItem[]) => items.filter(([label]) => !normalized || label.toLowerCase().includes(normalized))
-  const nav = matches(navigation); const actionItems = matches(actions)
-  const caseItems = useMemo(() => cases.filter((item) => !normalized || `${item.id} ${item.title} ${item.firNumber}`.toLowerCase().includes(normalized)).slice(0, 5).map((item) => [item.title, `/cases/${item.id}`, FolderKanban, item.id] as const), [cases, normalized])
-  const docItems = useMemo(() => documents.filter((item) => !normalized || `${item.title} ${item.searchableText}`.toLowerCase().includes(normalized)).slice(0, 6).map((item) => [item.title, `/documents/${item.id}`, FileText, item.caseId] as const), [documents, normalized])
+  const permitted = (items: readonly PaletteItem[]) => items.filter(([, path]) => { const permission = ACTION_PERMISSIONS[path as keyof typeof ACTION_PERMISSIONS] ?? NAV_PERMISSIONS[path]; return !permission || can(permission) }); const nav = matches(permitted(navigation)); const actionItems = matches(permitted(actions))
+  const caseItems = useMemo(() => visibleCases.filter((item) => !normalized || `${item.id} ${item.title} ${item.firNumber}`.toLowerCase().includes(normalized)).slice(0, 5).map((item) => [item.title, `/cases/${item.id}`, FolderKanban, item.id] as const), [visibleCases, normalized])
+  const docItems = useMemo(() => visibleDocuments.filter((item) => !normalized || `${item.title} ${item.searchableText}`.toLowerCase().includes(normalized)).slice(0, 6).map((item) => [item.title, `/documents/${item.id}`, FileText, item.caseId] as const), [visibleDocuments, normalized])
   const all = [...nav, ...actionItems, ...caseItems, ...docItems]
   const active = Math.min(rawActive, Math.max(all.length - 1, 0))
   useEffect(() => { const handler = (event: globalThis.KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); onOpenChange(true) } }; window.addEventListener('keydown', handler); return () => window.removeEventListener('keydown', handler) }, [onOpenChange])

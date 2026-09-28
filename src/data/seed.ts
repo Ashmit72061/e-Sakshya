@@ -19,6 +19,7 @@ const users: User[] = [
   { id:'u-005', name:'Farah Shaikh', designation:'Forensic Evidence Officer', role:'evidence-custodian', badgeId:'MH-FSL-472', station:'Regional Forensic Science Laboratory, Pune', department:'Maharashtra FSL', clearance:'restricted', initials:'FS', email:'farah.shaikh@fsl.gov.in' },
   { id:'u-006', name:'Vivek Iyer', designation:'Compliance Auditor', role:'auditor', badgeId:'NCRB-AUD-091', station:'NCRB Regional Cell, Mumbai', department:'NCRB', clearance:'official', initials:'VI', email:'vivek.iyer@ncrb.gov.in' },
   { id:'u-007', name:'Meera Deshpande', designation:'System Administrator', role:'admin', badgeId:'NCRB-ADM-014', station:'NCRB Regional Cell, Mumbai', department:'NCRB', clearance:'sealed', initials:'MD', email:'meera.deshpande@ncrb.gov.in' },
+  { id:'u-008', name:'Aarav Sinha', designation:'Director, Digital Evidence', role:'superadmin', badgeId:'NCRB-SYS-001', station:'NCRB Regional Cell, Mumbai', department:'NCRB', clearance:'sealed', initials:'AS', email:'aarav.sinha@ncrb.gov.in' },
 ]
 const caseRows: Array<[string,string,string,string,CaseRecord['status'],CaseRecord['classification'],string[],string]> = [
   ['CASE-2026-0184','FIR/PS-CYBER/2026/0451','UPI impersonation and account takeover','Cyber Fraud','under-investigation','restricted',['BNS s.318(4)','IT Act s.66D'],'Pune'],
